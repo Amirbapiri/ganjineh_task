@@ -1,0 +1,67 @@
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./docker/local/django/Dockerfile
+    volumes:
+      - .:/app:z
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    expose:
+      - "8000"
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    command: /start
+    networks:
+      - ganjineh-nw
+
+  nginx:
+    restart: always
+    depends_on:
+      - django
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    build:
+      context: ./docker/local/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    networks:
+      - ganjineh-nw
+
+  postgres:
+    build:
+      context: ./docker/local/postgres/
+      dockerfile: Dockerfile
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.envs/.local/.postgres
+    networks:
+      - ganjineh-nw
+
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file:
+      - ./.envs/.local/.pgadmin
+    volumes:
+      - pgadmin:/data/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - ganjineh-nw
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+networks:
+  ganjineh-nw:
+    driver: bridge
+
+volumes:
+  local_postgres_data: {}
+  pgadmin:
+  static_volume:
+  media_volume:
