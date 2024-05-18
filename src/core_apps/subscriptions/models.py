@@ -27,7 +27,6 @@ class UserSubscription(models.Model):
         related_name="user_subscriptions",
     )
     credits_remaining = models.PositiveIntegerField()
-    expires_at = models.DateField()
     is_approved = models.BooleanField(default=True)
 
     def __str__(self):
