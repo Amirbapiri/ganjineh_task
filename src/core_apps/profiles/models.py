@@ -8,9 +8,11 @@ User = get_user_model()
 class Profile(models.Model):
     REGULAR = "regular"
     SUBSCRIBED = "subscribed"
+    ADMIN = "admin"
     USER_TYPE_CHOICES = [
         (REGULAR, "Regular"),
         (SUBSCRIBED, "Subscribed"),
+        (ADMIN, "Admin"),
     ]
 
     user = models.OneToOneField(

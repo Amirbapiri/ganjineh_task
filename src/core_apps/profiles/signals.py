@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        if instance.is_superuser:
+            user_type = Profile.ADMIN
+        else:
+            user_type = Profile.REGULAR
+
+        Profile.objects.create(user=instance, user_type=user_type)
         logger.info(f"{instance}'s profile has been created.")
-    instance.profile.save()
+    else:
+        instance.profile.save()
+        logger.info(f"{instance}'s profile has been updated.")
