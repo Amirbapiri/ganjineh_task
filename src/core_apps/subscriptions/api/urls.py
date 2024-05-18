@@ -1,6 +1,15 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
-from .views import SubscriptionPlanListView, UserSubscriptionCreateView
+from .views import (
+    SubscriptionPlanListView,
+    UserSubscriptionCreateView,
+    UserSubscriptionViewSet,
+)
+
+
+router = DefaultRouter()
+router.register(r"", UserSubscriptionViewSet, basename="subscription")
 
 urlpatterns = [
     path(
@@ -13,4 +22,5 @@ urlpatterns = [
         UserSubscriptionCreateView.as_view(),
         name="user-subscribe",
     ),
+    path("", include(router.urls)),
 ]

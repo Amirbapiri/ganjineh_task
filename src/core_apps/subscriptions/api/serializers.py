@@ -15,3 +15,18 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSubscription
         fields = ("plan",)
+
+
+class UserSubscriptionListSerializer(serializers.ModelSerializer):
+    plan = SubscriptionPlanSerializer(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = UserSubscription
+        fields = (
+            "id",
+            "user",
+            "plan",
+            "credits_remaining",
+            "is_approved",
+        )
