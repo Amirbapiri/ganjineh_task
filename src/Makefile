@@ -15,3 +15,16 @@ down:
 
 down-v:
 	docker compose -f docker-compose.dev.yml down -v
+
+makemigrations:
+	docker compose -f docker-compose.dev.yml run --rm django python manage.py makemigrations
+
+migrate:
+	docker compose -f docker-compose.dev.yml run --rm django python manage.py migrate
+
+superuser:
+	docker compose -f docker-compose.dev.yml run --rm django python manage.py createsuperuser
+
+collectstatic:
+	docker compose -f docker-compose.dev.yml run --rm django python manage.py collectstatic --no-input --clear
+
