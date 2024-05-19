@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core_apps.subscriptions.models import SubscriptionPlan, UserSubscription
+from core_apps.profiles.models import Profile
 from .serializers import (
     SubscriptionPlanSerializer,
     UserSubscriptionSerializer,
@@ -31,6 +32,9 @@ class UserSubscriptionCreateView(generics.CreateAPIView):
             is_approved=False,
             credits_remaining=daily_credits,
         )
+        # TODO could be done via signals
+        user.profile.user_type = Profile.SUBSCRIBED
+        user.profile.save()
 
 
 class UserSubscriptionViewSet(viewsets.ModelViewSet):
