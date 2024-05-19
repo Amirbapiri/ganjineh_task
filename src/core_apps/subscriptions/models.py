@@ -26,8 +26,24 @@ class UserSubscription(models.Model):
         on_delete=models.CASCADE,
         related_name="user_subscriptions",
     )
-    credits_remaining = models.PositiveIntegerField()
     is_approved = models.BooleanField(default=True)
+    monthly_limit_increase = models.BooleanField(default=False)
+    monthly_limit_expiry = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} - {self.plan.name}"
+
+
+class CreditIncreaseRequest(models.Model):
+    user_subscription = models.ForeignKey(
+        UserSubscription,
+        on_delete=models.CASCADE,
+        related_name="credit_increase_requests",
+    )
+    increase_amount = models.PositiveIntegerField()
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Credit Increase Request for {self.user_subscription.user} - {self.increase_amount} credits"

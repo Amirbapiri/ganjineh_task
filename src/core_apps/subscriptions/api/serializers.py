@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
-from core_apps.subscriptions.models import SubscriptionPlan, UserSubscription
+from core_apps.subscriptions.models import (
+    SubscriptionPlan,
+    UserSubscription,
+    CreditIncreaseRequest,
+)
 
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
@@ -27,6 +31,24 @@ class UserSubscriptionListSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "plan",
-            "credits_remaining",
             "is_approved",
+            "monthly_limit_increase",
+            "monthly_limit_expiry",
+        )
+
+
+class CreditIncreaseRequestSerializer(serializers.ModelSerializer):
+    user_subscription = serializers.PrimaryKeyRelatedField(
+        queryset=UserSubscription.objects.all()
+    )
+
+    class Meta:
+        model = CreditIncreaseRequest
+        fields = (
+            "id",
+            "user_subscription",
+            "increase_amount",
+            "is_approved",
+            "created_at",
+            "approved_at",
         )
