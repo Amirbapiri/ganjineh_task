@@ -1,11 +1,13 @@
 import csv
-from datetime import datetime
-from rest_framework import status, views, permissions
+from datetime import datetime, date, timedelta
+from rest_framework import status, views, permissions, generics
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
 from .permissions import IsAdminUser
 from core_apps.tokens.models import Token, TokenPrice
+from core_apps.profiles.models import Profile
+from .serializers import TokenPriceSerializer
 
 
 class TokenDataUploadView(views.APIView):
@@ -48,3 +50,46 @@ class TokenDataUploadView(views.APIView):
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class TokenPriceQueryView(generics.ListAPIView):
+    serializer_class = TokenPriceSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        token_name = self.request.query_params.get("token_name")
+        start_date = self.request.query_params.get("start_date")
+        end_date = self.request.query_params.get("end_date")
+        user = self.request.user
+        profile = user.profile
+
+        if profile.user_type == Profile.REGULAR:
+            if (
+                date.fromisoformat(end_date) - date.fromisoformat(start_date)
+            ) > timedelta(days=30):
+                return Response(
+                    {"message": "Regular users can only query up to one month"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if not self.deduct_user_credit(profile, token_name):
+            return Response(
+                {"message": "Not enough credits"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return TokenPrice.objects.filter(
+            token__name=token_name,
+            date__range=[start_date, end_date],
+        )
+
+    def deduct_user_credit(self, profile, token_name):
+        credit_costs = {"btc": 1, "eth": 2, "trx": 3}
+        cost = credit_costs.get(token_name.lower())
+        if cost is None:
+            return False
+        if profile.credits_remaining >= cost:
+            profile.credits_remaining -= cost
+            profile.save()
+            return True
+        return False
