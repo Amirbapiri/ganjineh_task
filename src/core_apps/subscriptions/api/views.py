@@ -32,9 +32,6 @@ class UserSubscriptionCreateView(generics.CreateAPIView):
             is_approved=False,
             credits_remaining=daily_credits,
         )
-        # TODO could be done via signals
-        user.profile.user_type = Profile.SUBSCRIBED
-        user.profile.save()
 
 
 class UserSubscriptionViewSet(viewsets.ModelViewSet):
@@ -55,5 +52,12 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
         subscription.is_approved = True
         subscription.credits_remaining = subscription.plan.daily_credits
         subscription.save()
+
+        # TODO could be done via signals
+        # Update user_type after subscription approval
+        user = subscription.user
+        user.profile.user_type = Profile.SUBSCRIBED
+        user.profile.save()
+
         serializer = self.get_serializer(subscription)
         return Response(serializer.data, status=status.HTTP_200_OK)
