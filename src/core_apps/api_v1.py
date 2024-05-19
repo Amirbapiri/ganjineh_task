@@ -15,4 +15,12 @@ urlpatterns = [
         ),
         name="subscriptions",
     ),
+    path(
+        "tokens/",
+        include(
+            ("core_apps.tokens.api.urls", "tokens"),
+            namespace="tokens",
+        ),
+        name="tokens",
+    ),
 ]
