@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import TokenDataUploadView, TokenPriceQueryView
+from .views import RegularUserProfitView, TokenDataUploadView
 
 urlpatterns = [
     path(
@@ -9,8 +9,8 @@ urlpatterns = [
         name="token-data-upload",
     ),
     path(
-        "query/",
-        TokenPriceQueryView.as_view(),
-        name="token-price-query",
+        "regular-user-profit/",
+        RegularUserProfitView.as_view(),
+        name="regular-user-profit",
     ),
 ]
