@@ -56,6 +56,26 @@ services:
     depends_on:
       - postgres
 
+  redis:
+    image: redis:7-alpine
+    networks:
+      - ganjineh-nw
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./docker/local/django/Dockerfile
+    command: /start-celeryworker
+    volumes:
+      - .:/app
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    depends_on:
+      - redis
+    networks:
+      - ganjineh-nw
+
 networks:
   ganjineh-nw:
     driver: bridge

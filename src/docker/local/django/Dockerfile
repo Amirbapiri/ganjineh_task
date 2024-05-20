@@ -44,6 +44,10 @@ COPY ./docker/local/django/start /start
 RUN set -i "s/\r$//g" /start
 RUN chmod +x /start
 
+COPY ./docker/local/django/celery/worker/start /start-celeryworker
+RUN set -i "s/\r$//g" /start-celeryworker
+RUN chmod +x /start-celeryworker
+
 COPY . ${APP_HOME}
 
 ENTRYPOINT [ "/entrypoint" ]

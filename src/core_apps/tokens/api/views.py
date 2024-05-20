@@ -8,6 +8,7 @@ from .permissions import IsAdminUser
 from core_apps.tokens.models import Token, TokenPrice
 from core_apps.profiles.models import Profile
 from .serializers import TokenPriceSerializer
+from core_apps.tokens.tasks import process_csv_upload
 
 
 class TokenDataUploadView(views.APIView):
@@ -19,37 +20,13 @@ class TokenDataUploadView(views.APIView):
         token_name = request.data.get("token_name")
 
         try:
-            token, _ = Token.objects.get_or_create(name=token_name)
-            csv_file = csv.DictReader(file.read().decode("utf-8").splitlines())
-            for row in csv_file:
-                print(row)
-                date_str = row.get("Date")
-                price = row.get("Price")
-                # Convert date to the correct format
-                try:
-                    date = datetime.strptime(date_str, "%m-%d-%Y").strftime("%Y-%m-%d")
-                except ValueError:
-                    return Response(
-                        {
-                            "error": f"Invalid date format for {date_str}. Expected MM-DD-YYYY."
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                TokenPrice.objects.update_or_create(
-                    token=token,
-                    date=date,
-                    defaults={"price": price},
-                )
+            file_content = file.read()
+            process_csv_upload.delay(file_content, token_name)
             return Response(
-                {"detail": "Data uploaded successfully"},
-                status=status.HTTP_200_OK,
+                {"detail": "Data uploaded successfully"}, status=status.HTTP_200_OK
             )
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegularUserProfitView(views.APIView):
