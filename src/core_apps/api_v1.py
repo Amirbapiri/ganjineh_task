@@ -23,4 +23,12 @@ urlpatterns = [
         ),
         name="tokens",
     ),
+    path(
+        "notifications/",
+        include(
+            ("core_apps.notifications.api.urls", "notifications"),
+            namespace="notifications",
+        ),
+        name="notifications",
+    ),
 ]
