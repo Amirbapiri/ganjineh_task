@@ -41,6 +41,8 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "rest_framework.authtoken",
     "django_extensions",
+    "channels",
+    "uvicorn",
 ]
 
 LOCAL_APPS = [
@@ -48,6 +50,8 @@ LOCAL_APPS = [
     "core_apps.profiles",
     "core_apps.subscriptions",
     "core_apps.tokens",
+    "core_apps.notifications",
+    "core_apps.common",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -200,3 +204,21 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_RESULT_BACKEND_MAX_RETRIES = 10
 CELERY_TASK_SEND_SENT_EVENT = True
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "DECODE_RESPONSES": True,
+            "charset": "utf-8",
+        },
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("redis", 6379)]},
+    }
+}
