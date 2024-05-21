@@ -7,3 +7,8 @@ class TokensConfig(AppConfig):
     name = "core_apps.tokens"
     verbose_name = _("Token")
     verbose_name_plural = _("Tokens")
+
+    def ready(self):
+        from core_apps.tokens import signals
+
+        return super().ready()

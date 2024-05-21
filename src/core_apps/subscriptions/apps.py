@@ -7,3 +7,6 @@ class SubscriptionsConfig(AppConfig):
     name = "core_apps.subscriptions"
     verbose_name = _("Subscriptions")
     verbose_name_plural = _("Subscriptions")
+
+    def ready(self):
+        from core_apps.subscriptions import signals

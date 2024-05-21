@@ -7,3 +7,8 @@ class NotificationsConfig(AppConfig):
     name = "core_apps.notifications"
     verbose_name = _("Notification")
     verbose_name_plural = _("Notifications")
+
+    def ready(self):
+        import core_apps.notifications.receivers
+
+        return super().ready()

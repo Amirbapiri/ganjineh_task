@@ -1,8 +1,6 @@
-from django.shortcuts import get_list_or_404, get_object_or_404
 from rest_framework import generics, permissions, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from core_apps.subscriptions.models import (
     SubscriptionPlan,
     UserSubscription,
@@ -16,7 +14,7 @@ from .serializers import (
     UserSubscriptionListSerializer,
 )
 from .permissions import IsAdminUser
-from ganjineh_api.utils import create_notification
+from core_apps.subscriptions.signals import subscription_approved_notification
 
 
 class SubscriptionPlanListView(generics.ListAPIView):
@@ -63,12 +61,8 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
         user.profile.user_type = Profile.SUBSCRIBED
         user.profile.save()
 
-        create_notification(
-            user,
-            "Credit Increase Request Approved",
-            f"Your credit increase request for {subscription.plan.name} has been approved.",
-            "MSG",
-        )
+        subscription_approved_notification.send(sender=self.__class__, user=user)
+
         serializer = self.get_serializer(subscription)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

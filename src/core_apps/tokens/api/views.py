@@ -1,15 +1,13 @@
-import csv
-from datetime import datetime, date, timedelta
-from rest_framework import status, views, permissions, generics
+from datetime import date, timedelta
+from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
 from .permissions import IsAdminUser
-from core_apps.tokens.models import Token, TokenPrice
+from core_apps.tokens.models import TokenPrice
 from core_apps.profiles.models import Profile
-from .serializers import TokenPriceSerializer
 from core_apps.tokens.tasks import process_csv_upload
-from ganjineh_api.utils import create_notification
+from core_apps.tokens.signals import insufficient_signal_notification
 
 
 class TokenDataUploadView(views.APIView):
@@ -87,11 +85,9 @@ class RegularUserProfitView(views.APIView):
             profile.save()
             return True
         else:
-            create_notification(
-                profile.user,
-                "Insufficient Credits",
-                "Your credits have run out.",
-                "ALERT",
+            insufficient_signal_notification.send(
+                sender=self.__class__,
+                user=profile.user,
             )
             return False
 
