@@ -9,6 +9,7 @@ from core_apps.tokens.models import Token, TokenPrice
 from core_apps.profiles.models import Profile
 from .serializers import TokenPriceSerializer
 from core_apps.tokens.tasks import process_csv_upload
+from ganjineh_api.utils import create_notification
 
 
 class TokenDataUploadView(views.APIView):
@@ -85,7 +86,14 @@ class RegularUserProfitView(views.APIView):
             profile.credits_remaining -= cost
             profile.save()
             return True
-        return False
+        else:
+            create_notification(
+                profile.user,
+                "Insufficient Credits",
+                "Your credits have run out.",
+                "ALERT",
+            )
+            return False
 
     def calculate_max_profit_range(self, token_prices):
         if not token_prices:

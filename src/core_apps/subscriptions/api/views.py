@@ -3,7 +3,6 @@ from rest_framework import generics, permissions, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from core_apps.subscriptions.models import (
     SubscriptionPlan,
     UserSubscription,
@@ -17,6 +16,7 @@ from .serializers import (
     UserSubscriptionListSerializer,
 )
 from .permissions import IsAdminUser
+from ganjineh_api.utils import create_notification
 
 
 class SubscriptionPlanListView(generics.ListAPIView):
@@ -32,12 +32,9 @@ class UserSubscriptionCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        plan = serializer.validated_data.get("plan")
-        daily_credits = plan.daily_credits
         serializer.save(
             user=user,
             is_approved=False,
-            credits_remaining=daily_credits,
         )
 
 
@@ -66,6 +63,12 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
         user.profile.user_type = Profile.SUBSCRIBED
         user.profile.save()
 
+        create_notification(
+            user,
+            "Credit Increase Request Approved",
+            f"Your credit increase request for {subscription.plan.name} has been approved.",
+            "MSG",
+        )
         serializer = self.get_serializer(subscription)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
