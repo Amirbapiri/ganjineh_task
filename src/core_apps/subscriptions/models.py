@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from datetime import date
 
 
 User = get_user_model()
@@ -8,7 +7,6 @@ User = get_user_model()
 
 class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=100)
-    daily_credits = models.PositiveIntegerField()
     token_access = models.BooleanField(default=False)
     credit_increase = models.BooleanField(default=False)
     monthly_credit_increase = models.BooleanField(default=False)
@@ -29,19 +27,12 @@ class UserSubscription(models.Model):
         related_name="user_subscriptions",
     )
     is_approved = models.BooleanField(default=True)
-    daily_usage = models.PositiveBigIntegerField(default=0)
     last_usage_date = models.DateField(null=True, blank=True)
     monthly_limit_increase = models.BooleanField(default=False)
     monthly_limit_expiry = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} - {self.plan.name}"
-
-    def reset_daily_usage(self):
-        if self.last_usage_date != date.today():
-            self.daily_usage = 0
-            self.last_usage_date = date.today()
-            self.save()
 
 
 class CreditIncreaseRequest(models.Model):

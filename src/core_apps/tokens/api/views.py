@@ -3,7 +3,12 @@ from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
-from .permissions import IsAdminUser
+from .permissions import (
+    IsAdminUser,
+    HasActiveSubscription,
+    RegularUserPermission,
+    SubscribedUserPermission,
+)
 from core_apps.tokens.models import TokenPrice
 from core_apps.profiles.models import Profile
 from core_apps.tokens.tasks import process_csv_upload
@@ -30,32 +35,26 @@ class TokenDataUploadView(views.APIView):
 
 
 class RegularUserProfitView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        RegularUserPermission | SubscribedUserPermission,
+    )
 
     def get(self, request, *args, **kwargs):
         user = request.user
         profile = user.profile
         token_name = request.query_params.get("token_name")
+
+        success, error = profile.check_and_deduct_credits(token_name)
+        if not success:
+            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
+
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
-
-        if profile.user_type == Profile.REGULAR:
-            if date.fromisoformat(end_date) - date.fromisoformat(
-                start_date
-            ) > timedelta(days=30):
-                return Response(
-                    {"error": "Regular users can only query up to one month."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        if not self.deduct_credits(profile, token_name):
-            return Response(
-                {"error": "Insufficient credits"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         token_prices = TokenPrice.objects.filter(
             token__name=token_name, date__range=[start_date, end_date]
         ).order_by("date")
+
         if not token_prices.exists():
             return Response(
                 {"error": "No data available for the specified range"},
@@ -75,35 +74,6 @@ class RegularUserProfitView(views.APIView):
             response_data = {"error": "No profitable buy/sell pairs found."}
 
         return Response(response_data)
-
-    def deduct_credits(self, profile, token_name):
-        costs = {"btc": 1, "eth": 2, "trx": 3}
-        cost = costs.get(token_name.lower())
-        if cost is None:
-            return False
-        try:
-            user_subscription = UserSubscription.objects.get(
-                user=profile.user, is_approved=True
-            )
-        except UserSubscription.DoesNotExist:
-            return False
-
-        if user_subscription.last_usage_date != date.today():
-            user_subscription.daily_usage = 0
-            user_subscription.last_usage_date = date.today()
-            user_subscription.save()
-
-        if user_subscription.daily_usage + cost > 10:
-            insufficient_signal_notification.send(
-                sender=self.__class__,
-                user=profile.user,
-            )
-
-            return False
-
-        user_subscription.daily_usage += cost
-        user_subscription.save()
-        return True
 
     def calculate_max_profit_range(self, token_prices):
         if not token_prices:

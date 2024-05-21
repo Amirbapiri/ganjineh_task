@@ -51,12 +51,14 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["patch"], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
         subscription = self.get_object()
+        if subscription.is_approved:
+            return Response(
+                {"error": "This subscription has already been approved"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         subscription.is_approved = True
-        subscription.credits_remaining = subscription.plan.daily_credits
         subscription.save()
 
-        # TODO could be done via signals
-        # Update user_type after subscription approval
         user = subscription.user
         user.profile.user_type = Profile.SUBSCRIBED
         user.profile.save()
@@ -144,7 +146,7 @@ class CreditIncreaseRequestViewSet(viewsets.ModelViewSet):
         credit_request.save()
 
         profile = credit_request.user_subscription.user.profile
-        profile.credits_remaining += credit_request.increase_amount
+        profile.allowed_daily_credits += credit_request.increase_amount
         profile.save()
 
         serializer = self.get_serializer(credit_request)
