@@ -148,18 +148,6 @@ class SubscribedUserProfitView(views.APIView):
 
         return Response(response_data)
 
-    def deduct_credits(self, profile, amount=10):
-        if profile.credits_remaining >= amount:
-            profile.credits_remaining -= amount
-            profile.save()
-            return True
-        else:
-            insufficient_signal_notification.send(
-                sender=self.__class__,
-                user=profile.user,
-            )
-            return False
-
     def calculate_top_intervals(
         self,
         token_prices,
