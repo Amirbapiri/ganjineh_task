@@ -1,20 +1,16 @@
-from datetime import date, timedelta
 from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
 from .permissions import (
     IsAdminUser,
-    HasActiveSubscription,
     RegularUserPermission,
     SpecialSubscribedUserPermission,
     SubscribedUserPermission,
 )
 from core_apps.tokens.models import TokenPrice
-from core_apps.profiles.models import Profile
 from core_apps.tokens.tasks import process_csv_upload
 from core_apps.tokens.signals import insufficient_signal_notification
-from core_apps.subscriptions.models import UserSubscription
 
 
 class TokenDataUploadView(views.APIView):
