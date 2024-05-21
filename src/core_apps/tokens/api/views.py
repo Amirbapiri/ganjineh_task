@@ -7,6 +7,7 @@ from .permissions import (
     IsAdminUser,
     HasActiveSubscription,
     RegularUserPermission,
+    SpecialSubscribedUserPermission,
     SubscribedUserPermission,
 )
 from core_apps.tokens.models import TokenPrice
@@ -97,7 +98,10 @@ class RegularUserProfitView(views.APIView):
 
 
 class SubscribedUserProfitView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        SpecialSubscribedUserPermission,
+    )
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -106,10 +110,9 @@ class SubscribedUserProfitView(views.APIView):
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
 
-        if not self.deduct_credits(profile):
-            return Response(
-                {"error": "Insufficient credits"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        success, error = profile.check_and_deduct_credits_for_special_user(amount=10)
+        if not success:
+            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
 
         token_prices = TokenPrice.objects.filter(
             token__name=token_name,

@@ -2,6 +2,8 @@ from datetime import date
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from core_apps.tokens.signals import insufficient_signal_notification
+
 User = get_user_model()
 
 
@@ -48,8 +50,24 @@ class Profile(models.Model):
             return False, "Invalid token name"
 
         if self.spent_daily_credits + cost > self.allowed_daily_credits:
+            insufficient_signal_notification.send(
+                sender=self.__class__,
+                user=self.user,
+            )
             return False, "Daily limit reached"
 
         self.spent_daily_credits += cost
         self.save()
         return True, None
+
+    def check_and_deduct_credits_for_special_user(self, amount=10):
+        if self.spent_daily_credits + amount <= self.allowed_daily_credits:
+            self.spent_daily_credits += amount
+            self.save()
+            return True, None
+        else:
+            insufficient_signal_notification.send(
+                sender=self.__class__,
+                user=self.user,
+            )
+            return False, "Insufficient credits"

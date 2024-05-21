@@ -63,3 +63,17 @@ class SubscribedUserPermission(BasePermission):
             if active_subscription:
                 return True
         return False
+
+
+class SpecialSubscribedUserPermission(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+
+        if user.profile.user_type == Profile.SUBSCRIBED:
+            active_subscription = UserSubscription.objects.filter(
+                user=user,
+                is_approved=True,
+            ).exists()
+            if active_subscription:
+                return True
+        return False
