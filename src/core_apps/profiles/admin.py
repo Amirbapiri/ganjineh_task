@@ -7,5 +7,5 @@ User = get_user_model()
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "user_type", "credits_remaining")
+    list_display = ("user", "user_type")
     search_fields = ("user__email", "user_type")

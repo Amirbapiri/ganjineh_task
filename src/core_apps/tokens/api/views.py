@@ -8,6 +8,7 @@ from core_apps.tokens.models import TokenPrice
 from core_apps.profiles.models import Profile
 from core_apps.tokens.tasks import process_csv_upload
 from core_apps.tokens.signals import insufficient_signal_notification
+from core_apps.subscriptions.models import UserSubscription
 
 
 class TokenDataUploadView(views.APIView):
@@ -80,16 +81,29 @@ class RegularUserProfitView(views.APIView):
         cost = costs.get(token_name.lower())
         if cost is None:
             return False
-        if profile.credits_remaining >= cost:
-            profile.credits_remaining -= cost
-            profile.save()
-            return True
-        else:
+        try:
+            user_subscription = UserSubscription.objects.get(
+                user=profile.user, is_approved=True
+            )
+        except UserSubscription.DoesNotExist:
+            return False
+
+        if user_subscription.last_usage_date != date.today():
+            user_subscription.daily_usage = 0
+            user_subscription.last_usage_date = date.today()
+            user_subscription.save()
+
+        if user_subscription.daily_usage + cost > 10:
             insufficient_signal_notification.send(
                 sender=self.__class__,
                 user=profile.user,
             )
+
             return False
+
+        user_subscription.daily_usage += cost
+        user_subscription.save()
+        return True
 
     def calculate_max_profit_range(self, token_prices):
         if not token_prices:

@@ -25,7 +25,6 @@ class Profile(models.Model):
         choices=USER_TYPE_CHOICES,
         default=REGULAR,
     )
-    credits_remaining = models.IntegerField(default=10)
 
     def __str__(self):
         return f"{self.user}'s profile"
