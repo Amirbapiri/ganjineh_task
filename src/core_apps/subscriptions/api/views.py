@@ -202,5 +202,10 @@ class MonthlyLimitIncreaseRequestViewSet(viewsets.ModelViewSet):
             requested_credits=limit_increase_request.requested_credits
         )
 
+        subscription_approved_notification.send(
+            sender=self.__class__,
+            user=limit_increase_request.user,
+        )
+
         serializer = self.get_serializer(limit_increase_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
