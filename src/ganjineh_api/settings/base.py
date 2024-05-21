@@ -87,6 +87,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "ganjineh_api.wsgi.application"
 
+ASGI_APPLICATION = "ganjineh_api.asgi.application"
+
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
