@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -29,6 +29,8 @@ class Profile(models.Model):
     )
     allowed_daily_credits = models.PositiveBigIntegerField(default=10)
     spent_daily_credits = models.PositiveBigIntegerField(default=0)
+    monthly_increased_credits = models.PositiveIntegerField(default=0)
+    monthly_limit_expiry = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user}'s profile"
@@ -49,7 +51,8 @@ class Profile(models.Model):
         if not cost:
             return False, "Invalid token name"
 
-        if self.spent_daily_credits + cost > self.allowed_daily_credits:
+        total_credits = self.allowed_daily_credits + self.monthly_increased_credits
+        if self.spent_daily_credits + cost > total_credits:
             insufficient_signal_notification.send(
                 sender=self.__class__,
                 user=self.user,
@@ -71,3 +74,14 @@ class Profile(models.Model):
                 user=self.user,
             )
             return False, "Insufficient credits"
+
+    def apply_monthly_limit_increase(self, requested_credits):
+        self.allowed_daily_credits = requested_credits
+        self.monthly_limit_expiry = date.today() + timedelta(days=30)
+        self.save()
+
+    def check_monthly_limit_expiry(self):
+        if self.monthly_limit_expiry and self.monthly_limit_expiry < date.today():
+            self.allowed_daily_credits = 10
+            self.monthly_limit_expiry = None
+            self.save()

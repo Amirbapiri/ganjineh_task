@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from rest_framework import generics, permissions, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,9 +14,11 @@ from .serializers import (
     SubscriptionPlanSerializer,
     UserSubscriptionSerializer,
     UserSubscriptionListSerializer,
+    MonthlyLimitIncreaseRequestSerializer,
 )
-from .permissions import IsAdminUser
+from .permissions import IsAdminUser, IsSubscribedAndCanIncreaseCredits
 from core_apps.subscriptions.signals import subscription_approved_notification
+from core_apps.subscriptions.models import MonthlyLimitIncreaseRequest
 
 
 class SubscriptionPlanListView(generics.ListAPIView):
@@ -150,4 +154,53 @@ class CreditIncreaseRequestViewSet(viewsets.ModelViewSet):
         profile.save()
 
         serializer = self.get_serializer(credit_request)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MonthlyLimitIncreaseRequestViewSet(viewsets.ModelViewSet):
+    queryset = MonthlyLimitIncreaseRequest.objects.all()
+    permission_classes = (
+        permissions.IsAuthenticated,
+        IsSubscribedAndCanIncreaseCredits,
+    )
+    serializer_class = MonthlyLimitIncreaseRequestSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAdminUser])
+    def pending(self, request):
+        pending_requests = MonthlyLimitIncreaseRequest.objects.filter(is_approved=False)
+        serializer = self.get_serializer(pending_requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        limit_increase_request = self.get_object()
+        if limit_increase_request.is_approved:
+            return Response(
+                {"error": "This request has already been approved"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        limit_increase_request.is_approved = True
+        limit_increase_request.approved_at = timezone.now()
+        limit_increase_request.save()
+
+        profile = limit_increase_request.user.profile
+        profile.apply_monthly_limit_increase(
+            requested_credits=limit_increase_request.requested_credits
+        )
+
+        serializer = self.get_serializer(limit_increase_request)
         return Response(serializer.data, status=status.HTTP_200_OK)

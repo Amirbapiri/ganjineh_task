@@ -4,6 +4,7 @@ from core_apps.subscriptions.models import (
     SubscriptionPlan,
     UserSubscription,
     CreditIncreaseRequest,
+    MonthlyLimitIncreaseRequest,
 )
 
 
@@ -52,3 +53,10 @@ class CreditIncreaseRequestSerializer(serializers.ModelSerializer):
             "created_at",
             "approved_at",
         )
+
+
+class MonthlyLimitIncreaseRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonthlyLimitIncreaseRequest
+        fields = ("id", "user", "requested_credits", "is_approved", "approved_at")
+        extra_kwargs = {"user": {"read_only": True}}

@@ -6,6 +6,7 @@ from .views import (
     UserSubscriptionCreateView,
     UserSubscriptionViewSet,
     CreditIncreaseRequestViewSet,
+    MonthlyLimitIncreaseRequestViewSet,
 )
 
 
@@ -19,6 +20,11 @@ router.register(
     r"credit-requests",
     CreditIncreaseRequestViewSet,
     basename="credit-request",
+)
+router.register(
+    r"monthly-limit-increase-requests",
+    MonthlyLimitIncreaseRequestViewSet,
+    basename="monthly-limit-increase-request",
 )
 
 urlpatterns = [

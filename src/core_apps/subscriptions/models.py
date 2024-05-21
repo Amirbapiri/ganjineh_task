@@ -48,3 +48,18 @@ class CreditIncreaseRequest(models.Model):
 
     def __str__(self):
         return f"Credit Increase Request for {self.user_subscription.user} - {self.increase_amount} credits"
+
+
+class MonthlyLimitIncreaseRequest(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="monthly_limit_increase_requests",
+    )
+    requested_credits = models.PositiveIntegerField()
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Monthly Limit Increase Request for {self.user} - {self.requested_credits} credits"
