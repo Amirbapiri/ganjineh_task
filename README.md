@@ -68,25 +68,12 @@ The application supports three types of users:
     cd ganjineh_task
     ```
 
-2. **Setup environment variables**:
-    - Create a `.env` file in the root directory and configure your environment variables as needed.
-
-3. **Build and run the containers**:
+2. **Build and run the containers**:
     ```bash
     make build
     ```
 
-4. **Run the containers**:
-    ```bash
-    make up
-    ```
-
-5. **Run migrations**:
-    ```bash
-    make migrate
-    ```
-
-6. **Create a superuser**:
+3. **Create a superuser**:
     ```bash
     make superuser
     ```
